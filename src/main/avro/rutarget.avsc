@@ -18,8 +18,8 @@
         },
         {
             "name": "ip_trunc",
-            "type": ["null", "boolean"],
-            "default": null
+            "type": ["boolean", "null"],
+            "default": false
         },
         {
             "name": "ua",

@@ -17,6 +17,7 @@
     <orderEntry type="library" name="com.google.guava:guava:18.0" level="project" />
     <orderEntry type="library" name="org.apache.avro:avro:1.7.7" level="project" />
     <orderEntry type="library" name="org.apache.kafka:kafka_2.9.2:0.8.1.1" level="project" />
+    <orderEntry type="library" name="lib" level="project" />
   </component>
 </module>
 

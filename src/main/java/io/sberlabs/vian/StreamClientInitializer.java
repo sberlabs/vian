@@ -14,12 +14,21 @@ import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.util.CharsetUtil;
 
+import kafka.javaapi.producer.Producer;
+
 public class StreamClientInitializer extends ChannelInitializer<SocketChannel> {
 
-    private final String schemaId;
+    private final Producer<String, String> kafkaProducer;
+    private final String kafkaTopic;
+    private final String kafkaTopicPartitionBy;
 
-    public StreamClientInitializer(String schemaId) {
-        this.schemaId = schemaId;
+    public StreamClientInitializer(Producer<String, String> kafkaProducer,
+                               String kafkaTopic,
+                               String kafkaTopicPartitionBy) {
+
+        this.kafkaProducer = kafkaProducer;
+        this.kafkaTopic = kafkaTopic;
+        this.kafkaTopicPartitionBy = kafkaTopicPartitionBy;
     }
 
     @Override
@@ -30,6 +39,6 @@ public class StreamClientInitializer extends ChannelInitializer<SocketChannel> {
         pipeline.addLast(new StringDecoder(CharsetUtil.UTF_8));
         pipeline.addLast(new StringEncoder(CharsetUtil.UTF_8));
 
-        pipeline.addLast(new StreamClientHandler(schemaId));
+        pipeline.addLast(new StreamClientHandler(kafkaProducer, kafkaTopic, kafkaTopicPartitionBy));
     }
 }

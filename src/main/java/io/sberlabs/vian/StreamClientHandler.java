@@ -7,39 +7,41 @@ package io.sberlabs.vian;
 
 import com.eclipsesource.json.JsonObject;
 
-import com.google.common.base.Charsets;
-import com.google.common.hash.Hashing;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
-import java.util.zip.CRC32;
+import kafka.javaapi.producer.Producer;
+import kafka.producer.KeyedMessage;
 
-public class StreamClientHandler  extends SimpleChannelInboundHandler<String> {
+public class StreamClientHandler extends SimpleChannelInboundHandler<String> {
 
-    static final String PARTITIONS = System.getProperty("kafka.topic.partitions", "3");
+    private final Producer<String, String> kafkaProducer;
+    private final String kafkaTopic;
+    private final String kafkaTopicPartitionBy;
 
-    private final String schemaId;
+    public StreamClientHandler(Producer<String, String> kafkaProducer,
+                               String kafkaTopic,
+                               String kafkaTopicPartitionBy) {
 
-    public StreamClientHandler(String schemaId) {
-        this.schemaId = schemaId;
-    }
-
-    private int getPartition(String s, int buckets) {
-        CRC32 crc32 = new CRC32();
-        crc32.update(s.getBytes(Charsets.UTF_8));
-        return Hashing.consistentHash(crc32.getValue(), buckets);
+        this.kafkaProducer = kafkaProducer;
+        this.kafkaTopic = kafkaTopic;
+        this.kafkaTopicPartitionBy = kafkaTopicPartitionBy;
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
         try {
             JsonObject jsonObject = JsonObject.readFrom(msg);
-            String id = jsonObject.get("id").asString();
-            if (id != null) {
-                int partition = getPartition(id, Integer.parseInt(PARTITIONS));
-                System.err.println("schemaId => "+ schemaId + "partition => " + partition + ", id => " + id);
+            String partitionKey = jsonObject.get(kafkaTopicPartitionBy).asString();
+
+            if (partitionKey != null) {
+                KeyedMessage<String, String> data = new KeyedMessage<>(kafkaTopic, partitionKey, msg);
+                kafkaProducer.send(data);
+                //System.err.println("topic => " + kafkaTopic +
+                //        ", partition by => " + kafkaTopicPartitionBy +
+                //        ", partition key => " + partitionKey);
             } else {
-                System.err.println("Error: id is absent in incoming JSON message, message: " + msg);
+                System.err.println("Error: partition key is absent in incoming JSON message, message: " + msg);
             }
         } catch (RuntimeException e) {
             System.err.println("Error: " + e.getMessage() + ", message: " + msg);

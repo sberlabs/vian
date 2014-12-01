@@ -6,13 +6,14 @@ package io.sberlabs.vian;
  */
 import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
+
 import kafka.producer.Partitioner;
 import kafka.utils.VerifiableProperties;
 
 import java.util.zip.CRC32;
 
-public class GuavaPartitioner implements Partitioner {
-    public GuavaPartitioner (VerifiableProperties verifiableProperties) {
+public class ConsistentHashingPartitioner implements Partitioner {
+    public ConsistentHashingPartitioner(VerifiableProperties verifiableProperties) {
 
     }
 
