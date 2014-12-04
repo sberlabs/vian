@@ -15,45 +15,57 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import kafka.javaapi.producer.Producer;
 import kafka.producer.ProducerConfig;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Properties;
 
 public class StreamClient {
 
-    static final String REPO_URL = System.getProperty("avro.schema.repo.url", "http://hotel:2876/schema-repo");
-    static final String REPO_GROUP = System.getProperty("avro.schema.repo.group", "io.sberlabs.records");
-    static final String SCHEMA_CLASS_NAME = System.getProperty("avro.schema.class",
-            "io.sberlabs.records.Rutarget");
+    private static void printHelp() {
 
-    static final String PROXY_HOST = System.getProperty("zmq.proxy.host", "bravo");
-    static final String PROXY_PORT = System.getProperty("zmq.proxy.port", "5353");
+        System.out.println("Usage: vian <path-to-vian.properties>");
+    }
 
-    static final String KAFKA_BROKER_LIST = System.getProperty("kafka.broker.list",
-            "hotel:9092,india:9092,juliett:9092");
-    static final String KAFKA_SERIALIZER = System.getProperty("kafka.serializer.class",
-            "io.sberlabs.vian.CamusSerializerForMessages");
-    static final String KAFKA_KEY_SERIALIZER = System.getProperty("kafka.key.serializer.class",
-            "io.sberlabs.vian.CamusSerializerForKeys");
-    static final String KAFKA_PARTITIONER = System.getProperty("kafka.partitioner.class",
-            "io.sberlabs.vian.ConsistentHashingPartitioner");
-    static final String KAFKA_ACK_LEVEL = System.getProperty("kafka.ack.level", "0");
-    static final String KAFKA_TOPIC = System.getProperty("kafka.topic", "rutarget-clickstream");
-    static final String KAFKA_TOPIC_PART_BY = System.getProperty("kafka.topic.partition.by", "id");
+    private static void configure(String filename) {
+
+        File config = new File(filename);
+
+        if (!config.canRead()) {
+            System.err.println("Cannot read file: " + config);
+            printHelp();
+            System.exit(1);
+        }
+
+        Properties props = new Properties();
+        try {
+            props.load(new BufferedInputStream(new FileInputStream(config)));
+            Properties systemProps = System.getProperties();
+            systemProps.putAll(props);
+            System.setProperties(systemProps);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
 
     public static void main(String[] args) throws Exception {
 
-        System.setProperty("avro.schema.repo.url", REPO_URL);
-        System.setProperty("avro.schema.repo.group", REPO_GROUP);
-        System.setProperty("avro.schema.class", SCHEMA_CLASS_NAME);
+        if (args.length != 1) {
+            printHelp();
+            System.exit(1);
+        }
+
+        configure(args[0]);
 
         Properties props = new Properties();
-        props.put("metadata.broker.list", KAFKA_BROKER_LIST);
-        props.put("serializer.class", KAFKA_SERIALIZER);
-        props.put("key.serializer.class", KAFKA_KEY_SERIALIZER);
-        props.put("partitioner.class", KAFKA_PARTITIONER);
-        props.put("request.required.acks", KAFKA_ACK_LEVEL);
-
+        props.put("metadata.broker.list", System.getProperty("kafka.broker.list"));
+        props.put("serializer.class", System.getProperty("kafka.serializer.class"));
+        props.put("key.serializer.class", System.getProperty("kafka.key.serializer.class"));
+        props.put("partitioner.class", System.getProperty("kafka.partitioner.class"));
+        props.put("request.required.acks", System.getProperty("kafka.ack.level"));
         ProducerConfig config = new ProducerConfig(props);
-
         Producer<String, String> producer = new Producer<>(config);
 
         EventLoopGroup workerGroup = new NioEventLoopGroup();
@@ -63,9 +75,12 @@ public class StreamClient {
             b.group(workerGroup);
             b.channel(NioSocketChannel.class);
             b.option(ChannelOption.SO_KEEPALIVE, true);
-            b.handler(new StreamClientInitializer(producer, KAFKA_TOPIC, KAFKA_TOPIC_PART_BY));
+            b.handler(new StreamClientInitializer(producer,
+                    System.getProperty("kafka.topic"),
+                    System.getProperty("kafka.topic.partition.by")));
 
-            ChannelFuture f = b.connect(PROXY_HOST, Integer.parseInt(PROXY_PORT)).sync();
+            ChannelFuture f = b.connect(System.getProperty("zmq.proxy.host"),
+                    Integer.parseInt(System.getProperty("zmq.proxy.port"))).sync();
 
             f.channel().closeFuture().sync();
         } finally {

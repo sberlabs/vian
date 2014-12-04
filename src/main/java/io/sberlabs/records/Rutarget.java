@@ -8,12 +8,12 @@ package io.sberlabs.records;
 /** Schema for visitors event stream from Rutarget.ru */
 @org.apache.avro.specific.AvroGenerated
 public class Rutarget extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Rutarget\",\"namespace\":\"io.sberlabs.records\",\"doc\":\"Schema for visitors event stream from Rutarget.ru\",\"fields\":[{\"name\":\"id\",\"type\":\"string\"},{\"name\":\"url\",\"type\":\"string\"},{\"name\":\"ip\",\"type\":\"string\"},{\"name\":\"ip_trunc\",\"type\":[\"boolean\",\"null\"],\"default\":false},{\"name\":\"ua\",\"type\":\"string\"},{\"name\":\"ts\",\"type\":\"long\"}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Rutarget\",\"namespace\":\"io.sberlabs.records\",\"doc\":\"Schema for visitors event stream from Rutarget.ru\",\"fields\":[{\"name\":\"id\",\"type\":\"string\"},{\"name\":\"url\",\"type\":\"string\"},{\"name\":\"ip\",\"type\":\"string\"},{\"name\":\"ip_trunc\",\"type\":\"boolean\"},{\"name\":\"ua\",\"type\":\"string\"},{\"name\":\"ts\",\"type\":\"long\"}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
   @Deprecated public java.lang.CharSequence id;
   @Deprecated public java.lang.CharSequence url;
   @Deprecated public java.lang.CharSequence ip;
-  @Deprecated public java.lang.Boolean ip_trunc;
+  @Deprecated public boolean ip_trunc;
   @Deprecated public java.lang.CharSequence ua;
   @Deprecated public long ts;
 
@@ -177,7 +177,7 @@ public class Rutarget extends org.apache.avro.specific.SpecificRecordBase implem
     private java.lang.CharSequence id;
     private java.lang.CharSequence url;
     private java.lang.CharSequence ip;
-    private java.lang.Boolean ip_trunc;
+    private boolean ip_trunc;
     private java.lang.CharSequence ua;
     private long ts;
 
@@ -325,7 +325,7 @@ public class Rutarget extends org.apache.avro.specific.SpecificRecordBase implem
     }
     
     /** Sets the value of the 'ip_trunc' field */
-    public io.sberlabs.records.Rutarget.Builder setIpTrunc(java.lang.Boolean value) {
+    public io.sberlabs.records.Rutarget.Builder setIpTrunc(boolean value) {
       validate(fields()[3], value);
       this.ip_trunc = value;
       fieldSetFlags()[3] = true;
@@ -339,7 +339,6 @@ public class Rutarget extends org.apache.avro.specific.SpecificRecordBase implem
     
     /** Clears the value of the 'ip_trunc' field */
     public io.sberlabs.records.Rutarget.Builder clearIpTrunc() {
-      ip_trunc = null;
       fieldSetFlags()[3] = false;
       return this;
     }

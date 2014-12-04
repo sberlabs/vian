@@ -27,33 +27,66 @@ public class CamusSerializerForMessages implements Encoder<String> {
     private static final byte MAGIC_BYTE = 0x0;
     private String schemaId;
 
+    private static HttpRequest avroRepoRegisterSchema(String schemaString) {
+        String repoUrl = System.getProperty("avro.schema.repo.url");
+        String repoSubj = System.getProperty("avro.schema.repo.subject");
+
+        return HttpRequest
+                .put(repoUrl + "/" + repoSubj + "/register")
+                .contentType("text/plain")
+                .send(schemaString);
+    }
+
+    private static HttpRequest avroRepoRegisterSubject() {
+        String repoUrl = System.getProperty("avro.schema.repo.url");
+        String repoSubj = System.getProperty("avro.schema.repo.subject");
+
+        return HttpRequest
+                .put(repoUrl + "/" + repoSubj)
+                .contentType("application/x-www-form-urlencoded");
+    }
+
+    private static String registerSchema(String schemaString) {
+        HttpRequest req = avroRepoRegisterSchema(schemaString);
+
+        int code = req.code();
+        String body = req.body();
+
+        if (code == 200) {
+            System.err.println("Schema registered successfully, schemaId =  " + body);
+            return body;
+        }
+        else if (code == 404) {
+            System.err.println("Subject is not in schema repo, trying to register it...");
+            int codeSubj = avroRepoRegisterSubject().code();
+
+            if (codeSubj != 200) {
+                System.err.println("Error in registering subject, status = " + codeSubj);
+                return "";
+            }
+
+            System.err.println("Subject has been registered successfully.");
+            return registerSchema(schemaString);
+        } else {
+            System.err.println("Error in registering schema, status = " + code);
+            return "";
+        }
+    }
+
     public CamusSerializerForMessages(VerifiableProperties verifiableProperties) {
         Schema schema;
         SpecificRecord obj;
 
-        String repoUrl = System.getProperty("avro.schema.repo.url");
-        String repoGroup = System.getProperty("avro.schema.repo.group");
         String schemaClassName = System.getProperty("avro.schema.class");
 
         try {
             Class<?> clazz = Class.forName(schemaClassName);
             obj = (SpecificRecord) clazz.newInstance();
             schema = obj.getSchema();
-
-            HttpRequest request = HttpRequest
-                    .put(repoUrl + "/" + repoGroup + "/register")
-                    .contentType("text/plain")
-                    .send(schema.toString());
-            schemaId = request.body();
-            int responseStatus = request.code();
-
-            if (responseStatus != 200) {
-                System.err.println("Error in registering schema, status = " + responseStatus);
+            schemaId = registerSchema(schema.toString());
+            if (schemaId.equals("")) {
                 System.exit(1);
-            } else {
-                System.err.println("Schema registered successfully, schemaId =  " + schemaId + ", status = " + responseStatus);
             }
-
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);
@@ -64,6 +97,8 @@ public class CamusSerializerForMessages implements Encoder<String> {
         JsonObject j = JsonObject.readFrom(s);
         boolean ipTruncated = false;
         String ipAddress = "0.0.0.0";
+        String ua = "ua-is-absent";
+        String url = "url-is-absent";
 
         if (j.get("ip_trunc") != null) {
             ipTruncated = j.get("ip_trunc").asBoolean();
@@ -73,13 +108,21 @@ public class CamusSerializerForMessages implements Encoder<String> {
             ipAddress = j.get("ip").asString();
         }
 
+        if (j.get("ua") != null) {
+            ua = j.get("ua").asString();
+        }
+
+        if (j.get("url") != null) {
+            url = j.get("url").asString();
+        }
+
         return Rutarget.newBuilder()
                 .setId(j.get("id").asString())
                 .setTs(j.get("ts").asLong())
                 .setIp(ipAddress)
                 .setIpTrunc(ipTruncated)
-                .setUrl(j.get("url").asString())
-                .setUa(j.get("ua").asString())
+                .setUrl(url)
+                .setUa(ua)
                 .build();
     }
 

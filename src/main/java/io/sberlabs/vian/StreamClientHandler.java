@@ -37,9 +37,6 @@ public class StreamClientHandler extends SimpleChannelInboundHandler<String> {
             if (partitionKey != null) {
                 KeyedMessage<String, String> data = new KeyedMessage<>(kafkaTopic, partitionKey, msg);
                 kafkaProducer.send(data);
-                //System.err.println("topic => " + kafkaTopic +
-                //        ", partition by => " + kafkaTopicPartitionBy +
-                //        ", partition key => " + partitionKey);
             } else {
                 System.err.println("Error: partition key is absent in incoming JSON message, message: " + msg);
             }
